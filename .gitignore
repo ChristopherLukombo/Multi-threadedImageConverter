@@ -10,3 +10,5 @@ cmake-build-debug/test_out.bmp
 cmake-build-debug/Multi_threadedImageConverter
 
 test_out.bmp
+
+cmake-build-debug/

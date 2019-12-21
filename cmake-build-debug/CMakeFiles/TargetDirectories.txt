@@ -1,3 +1,0 @@
-/mnt/c/Users/christopher/CLionProjects/Multi-threadedImageConverter/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/mnt/c/Users/christopher/CLionProjects/Multi-threadedImageConverter/cmake-build-debug/CMakeFiles/Multi_threadedImageConverter.dir
-/mnt/c/Users/christopher/CLionProjects/Multi-threadedImageConverter/cmake-build-debug/CMakeFiles/edit_cache.dir
