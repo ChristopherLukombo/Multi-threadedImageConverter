@@ -1,0 +1,12 @@
+
+.idea/
+
+bmp_tank.bmptest_out.bmp
+
+cmake-build-debug/CMakeFiles/Multi_threadedImageConverter.dir/
+
+cmake-build-debug/test_out.bmp
+
+cmake-build-debug/Multi_threadedImageConverter
+
+test_out.bmp

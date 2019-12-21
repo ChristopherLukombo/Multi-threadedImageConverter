@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include "bitmap.h"
 #include <stdint.h>
+#include "string.h"
 
 #define DIM 3
 #define LENGHT DIM
@@ -58,10 +59,11 @@ void apply_effect(Image* original, Image* new_i) {
 }
 
 int main(int argc, char **argv) {
-    printf("Image read: %s\n", argv[6]);
+    printf("Image read: %s\n", strcat(argv[6] , "bmp_tank.bmp"));
     Image img = open_bitmap( argv[6]);
     Image new_i;
     apply_effect(&img, &new_i);
-    save_bitmap(new_i, "test_out.bmp");
+    printf("Image save: %s\n", strcat(argv[6] , "test_out.bmp"));
+    save_bitmap(new_i, strcat(argv[6] , "test_out.bmp"));
     return 0;
 }

@@ -1,1 +1,0 @@
-/usr/bin/gcc-9 -g   CMakeFiles/Multi_threadedImageConverter.dir/edge-detect.c.o CMakeFiles/Multi_threadedImageConverter.dir/bitmap.c.o  -o Multi_threadedImageConverter 
