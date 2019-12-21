@@ -59,11 +59,13 @@ void apply_effect(Image* original, Image* new_i) {
 }
 
 int main(int argc, char **argv) {
-    printf("Image read: %s\n", strcat(argv[6] , "bmp_tank.bmp"));
-    Image img = open_bitmap( argv[6]);
+    char *const filenameInput = strcat(argv[6], "bmp_tank.bmp");
+    printf("Image read filename: %s\n", filenameInput);
+    Image img = open_bitmap(filenameInput);
     Image new_i;
     apply_effect(&img, &new_i);
-    printf("Image save: %s\n", strcat(argv[6] , "test_out.bmp"));
-    save_bitmap(new_i, strcat(argv[6] , "test_out.bmp"));
+    char *const fileNameOutPut = strcat(argv[6], "test_out.bmp");
+    printf("Image save filename: %s\n", fileNameOutPut);
+    save_bitmap(new_i, fileNameOutPut);
     return 0;
 }
