@@ -1,0 +1,4 @@
+/usr/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=/usr/bin/gcc-9 -G "CodeBlocks - Unix Makefiles" /mnt/c/Users/christopher/CLionProjects/Multi-threadedImageConverter
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /mnt/c/Users/christopher/CLionProjects/Multi-threadedImageConverter/cmake-build-debug
