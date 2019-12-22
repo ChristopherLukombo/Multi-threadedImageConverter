@@ -28,20 +28,22 @@ typedef struct Color_t {
 
 void apply_effect(Image *original, Image *new_i);
 
-void cleanDirectory(char *outPutDirectory);
+void clean_directory(char *outPutDirectory);
 
-char *getFileInput(char *const *argv, const struct dirent *deInput);
+char *get_file_input(char *const *argv, const struct dirent *deInput);
 
-char *getFileOutPut(char *const *argv);
+char *get_file_output(char *const *argv);
 
-void doTreatment(char *const *argv, struct dirent *deInput, const DIR *dr);
+void do_treatment(char *const *argv, struct dirent *deInput, const DIR *dr);
+
+const char *get_filename_ext(const char *filename);
 
 int main(int argc, char **argv) {
     if (NULL == argv[6] || NULL == argv[7]) {
         printf("The value of the Inputdirectory or Outputdirectory is missing");
         return 0;
     }
-    cleanDirectory(argv[7]);
+    clean_directory(argv[7]);
 
     struct dirent *deInput = NULL;  // Pointer for directory entry
     // opendir() returns a pointer of DIR type.
@@ -52,22 +54,22 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    doTreatment(argv, deInput, dr);
+    do_treatment(argv, deInput, dr);
     return 0;
 }
 
-void doTreatment(char *const *argv, struct dirent *deInput, const DIR *dr) {
+void do_treatment(char *const *argv, struct dirent *deInput, const DIR *dr) {
     while ((deInput = readdir(dr)) != NULL)
     {
-        if ((0 != strcmp(deInput->d_name, "."))
-            && (0 != strcmp(deInput->d_name, "..")))
+        if ((0 == strcmp(get_filename_ext(deInput->d_name), "bmp"))
+            || (0 == strcmp(get_filename_ext(deInput->d_name), "BMP")))
         {
-            char *fileInput = getFileInput(argv, deInput);
+            char *fileInput = get_file_input(argv, deInput);
             printf("File open : %s", fileInput);
             Image img = open_bitmap(fileInput);
             Image new_i;
             apply_effect(&img, &new_i);
-            char *fileOutPut = getFileOutPut(argv);
+            char *fileOutPut = get_file_output(argv);
             save_bitmap(new_i, fileOutPut);
             fileInput = NULL;
             fileOutPut = NULL;
@@ -76,7 +78,7 @@ void doTreatment(char *const *argv, struct dirent *deInput, const DIR *dr) {
     closedir(dr);
 }
 
-char *getFileInput(char *const *argv, const struct dirent *deInput) {
+char *get_file_input(char *const *argv, const struct dirent *deInput) {
     const unsigned long inputDirectoryLength = strlen(argv[6]) + strlen(deInput->d_name);
     char *fileInput = malloc(sizeof(char) * (inputDirectoryLength));
 
@@ -90,7 +92,7 @@ char *getFileInput(char *const *argv, const struct dirent *deInput) {
     return fileInput;
 }
 
-char *getFileOutPut(char *const *argv) {
+char *get_file_output(char *const *argv) {
     const unsigned long outPutDirectoryLength = strlen(argv[7]) + strlen("test_out.bmp");
     char *fileOutPut = malloc(sizeof(char) * (outPutDirectoryLength));
 
@@ -104,7 +106,7 @@ char *getFileOutPut(char *const *argv) {
     return fileOutPut;
 }
 
-void cleanDirectory(char *outPutDirectory) {
+void clean_directory(char *outPutDirectory) {
     DIR *dr = opendir(outPutDirectory);
 
     struct dirent *deOutPut;
@@ -126,6 +128,13 @@ void cleanDirectory(char *outPutDirectory) {
     }
     closedir(dr);
 }
+
+const char *get_filename_ext(const char *filename) {
+    const char *dot = strrchr(filename, '.');
+    if (!dot || dot == filename) return "";
+    return dot + 1;
+}
+
 
 void apply_effect(Image *original, Image *new_i) {
 
