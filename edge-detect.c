@@ -11,6 +11,7 @@
 #include <dirent.h>
 #include "string.h"
 
+
 #define DIM 3
 #define LENGHT DIM
 #define OFFSET DIM /2
@@ -38,11 +39,19 @@ void do_treatment(char *const *argv, struct dirent *deInput, const DIR *dr);
 
 const char *get_filename_ext(const char *filename);
 
+int isValidParameters(char *const *argv);
+
 int main(int argc, char **argv) {
     if (NULL == argv[6] || NULL == argv[7]) {
-        printf("The value of the Inputdirectory or Outputdirectory is missing");
+        printf("The value of the Inputdirectory or Outputdirectory isValidParameters missing");
         return 0;
     }
+
+    if (!isValidParameters(argv)) {
+        printf("./apply-effect \"./in/\" \"./out/\" 3 boxblur");
+        return 0;
+    }
+
     clean_directory(argv[7]);
 
     struct dirent *deInput = NULL;  // Pointer for directory entry
@@ -56,6 +65,29 @@ int main(int argc, char **argv) {
 
     do_treatment(argv, deInput, dr);
     return 0;
+}
+
+int isValidParameters(char *const *argv) {
+    int valid = 0;
+
+    if ((argv[8]) && 0 == strcmp("-boxblur", argv[8])) {
+        valid = 1;
+    } else {
+        valid = 0;
+    }
+
+    if ((argv[9]) && 0 == strcmp("-edgedetect", argv[9])) {
+        valid = 1;
+    } else {
+        valid = 0;
+    }
+
+    if ((argv[10]) && 0 == strcmp("-sharpen", argv[10])) {
+        valid = 1;
+    } else {
+        valid = 0;
+    }
+    return valid;
 }
 
 void do_treatment(char *const *argv, struct dirent *deInput, const DIR *dr) {
