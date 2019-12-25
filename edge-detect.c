@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <dirent.h>
 #include "string.h"
+#include <pthread.h>
 
 
 #define DIM 3
@@ -29,42 +30,74 @@ typedef struct Color_t {
 
 void apply_effect(Image *original, Image *new_i);
 
-void clean_directory(char *outPutDirectory);
+void *clean_directory(void* argument);
 
 char *get_file_input(char *const *argv, const struct dirent *deInput);
 
-char *get_file_output(char *const *argv);
+char *get_file_output(char *const *argv, char * ch);
 
-void do_treatment(char *const *argv, struct dirent *deInput, const DIR *dr);
+void *do_treatment(void* argument);
 
 const char *get_filename_ext(const char *filename);
 
 int isValidParameters(char *const *argv);
 
+
 int main(int argc, char **argv) {
-    if (NULL == argv[6] || NULL == argv[7]) {
-        printf("The value of the Inputdirectory or Outputdirectory isValidParameters missing");
+    pthread_t threadCleanDirectory;
+    pthread_t threadTreatment;
+
+    if (NULL == argv[6] || NULL == argv[7])
+    {
+        printf("The value of the Inputdirectory or Outputdirectory is missing");
         return 0;
     }
 
-    if (!isValidParameters(argv)) {
+    if (!isValidParameters(argv))
+    {
         printf("./apply-effect \"./in/\" \"./out/\" 3 boxblur");
         return 0;
     }
 
-    clean_directory(argv[7]);
+    // Creations of threads
+    pthread_create(&threadCleanDirectory, NULL, clean_directory,  (void*) argv[7]);
+    pthread_create(&threadTreatment, NULL, do_treatment, (void*) argv);
+
+    pthread_join(threadCleanDirectory, NULL);
+    pthread_join(threadTreatment, NULL);
+    return 0;
+}
+
+void *do_treatment(void* argument) {
+    char *const *argv = (char *const *) argument;
 
     struct dirent *deInput = NULL;  // Pointer for directory entry
+
     // opendir() returns a pointer of DIR type.
     DIR *dr = opendir(argv[6]);
     if (NULL == dr)  // opendir returns NULL if couldn't open directory
     {
         printf("Could not open current directory");
-        return 0;
+        return NULL;
     }
 
-    do_treatment(argv, deInput, dr);
-    return 0;
+    while ((deInput = readdir(dr)) != NULL)
+    {
+        if ((0 == strcmp(get_filename_ext(deInput->d_name), "bmp"))
+            || (0 == strcmp(get_filename_ext(deInput->d_name), "BMP")))
+        {
+            char *fileInput = get_file_input(argv, deInput);
+            printf("File open : %s", fileInput);
+            Image img = open_bitmap(fileInput);
+            Image new_i;
+            apply_effect(&img, &new_i);
+            char *fileOutPut = get_file_output(argv, deInput->d_name);
+            save_bitmap(new_i, fileOutPut);
+            fileInput = NULL;
+            fileOutPut = NULL;
+        }
+    }
+    closedir(dr);
 }
 
 int isValidParameters(char *const *argv) {
@@ -90,25 +123,7 @@ int isValidParameters(char *const *argv) {
     return valid;
 }
 
-void do_treatment(char *const *argv, struct dirent *deInput, const DIR *dr) {
-    while ((deInput = readdir(dr)) != NULL)
-    {
-        if ((0 == strcmp(get_filename_ext(deInput->d_name), "bmp"))
-            || (0 == strcmp(get_filename_ext(deInput->d_name), "BMP")))
-        {
-            char *fileInput = get_file_input(argv, deInput);
-            printf("File open : %s", fileInput);
-            Image img = open_bitmap(fileInput);
-            Image new_i;
-            apply_effect(&img, &new_i);
-            char *fileOutPut = get_file_output(argv);
-            save_bitmap(new_i, fileOutPut);
-            fileInput = NULL;
-            fileOutPut = NULL;
-        }
-    }
-    closedir(dr);
-}
+
 
 char *get_file_input(char *const *argv, const struct dirent *deInput) {
     const unsigned long inputDirectoryLength = strlen(argv[6]) + strlen(deInput->d_name);
@@ -124,8 +139,8 @@ char *get_file_input(char *const *argv, const struct dirent *deInput) {
     return fileInput;
 }
 
-char *get_file_output(char *const *argv) {
-    const unsigned long outPutDirectoryLength = strlen(argv[7]) + strlen("test_out.bmp");
+char *get_file_output(char *const *argv, char *ch) {
+    const unsigned long outPutDirectoryLength = strlen(argv[7]) + strlen(ch);
     char *fileOutPut = malloc(sizeof(char) * (outPutDirectoryLength));
 
     if (NULL == fileOutPut)
@@ -134,11 +149,12 @@ char *get_file_output(char *const *argv) {
     }
 
     fileOutPut = strcat(fileOutPut, argv[7]);
-    fileOutPut = strcat(fileOutPut, "test_out.bmp");
+    fileOutPut = strcat(fileOutPut, ch);
     return fileOutPut;
 }
 
-void clean_directory(char *outPutDirectory) {
+void *clean_directory(void* argument) {
+    char* outPutDirectory = (char*) argument;
     DIR *dr = opendir(outPutDirectory);
 
     struct dirent *deOutPut;

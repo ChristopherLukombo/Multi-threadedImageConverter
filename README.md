@@ -1,6 +1,11 @@
-Pour démarrer le programme, lancez la commande suivante : 
+Pour démarrer le programme, il faut le compiler avec la commande suivante : 
 
-gcc edge-detect.c bitmap.c -O2 -ftree-vectorize -fopt-info -mavx2 -fopt-info-vec-all </chemin des fichiers d'entrée/> </chemin des fichiers de sortie/>
+gcc-9 bitmap.c  edge-detect.c -O2 -ftree-vectorize -fopt-info -mavx2 -fopt-info-vec-all -lpthread
+
+Puis pour le lancer :
+
+./a.out -O2 -ftree-vectorize -fopt-info -mavx2 -fopt-info-vec-all </chemin des fichiers d'entrée/> </chemin des fichiers de sortie/> -boxblur -edgedetect -sharpen -lpthread
 
 Exemple :
-gcc edge-detect.c bitmap.c -O2 -ftree-vectorize -fopt-info -mavx2 -fopt-info-vec-all /mnt/c/Users/christopher/ProgramDev/Multi-threadedImageConverter/Input/ /mnt/c/Users/christopher/ProgramDev/Multi-threadedImageConverter/Output/
+./a.out -O2 -ftree-vectorize -fopt-info -mavx2 -fopt-info-vec-all /mnt/c/Users/christopher/ProgramDev/Multi-threadedImageConverter/Input/ /mnt/c/Users/christopher/ProgramDev/Multi-threadedImageConverter/Output/ -boxblur -edgedetect -sharpen -lpthread
+
