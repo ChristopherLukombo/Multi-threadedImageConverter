@@ -8,15 +8,18 @@
 #include <unistd.h>
 #include "bitmap.h"
 #include <stdint.h>
+#include <dirent.h>
 #include "string.h"
+#include <pthread.h>
+
 
 #define DIM 3
 #define LENGHT DIM
 #define OFFSET DIM /2
 
-const float KERNEL[DIM][DIM] = {{-1, -1,-1},
-                                {-1,8,-1},
-                                {-1,-1,-1}};
+const float KERNEL[DIM][DIM] = {{-1, -1, -1},
+                                {-1, 8,  -1},
+                                {-1, -1, -1}};
 
 typedef struct Color_t {
     float Red;
@@ -25,8 +28,163 @@ typedef struct Color_t {
 } Color_e;
 
 
-void apply_effect(Image* original, Image* new_i);
-void apply_effect(Image* original, Image* new_i) {
+void apply_effect(Image *original, Image *new_i);
+
+void *clean_directory(void* argument);
+
+char *get_file_input(char *const *argv, const struct dirent *deInput);
+
+char *get_file_output(char *const *argv, char * ch);
+
+void *do_treatment(void* argument);
+
+const char *get_filename_ext(const char *filename);
+
+int isValidParameters(char *const *argv);
+
+
+int main(int argc, char **argv) {
+    pthread_t threadCleanDirectory;
+    pthread_t threadTreatment;
+
+    if (NULL == argv[6] || NULL == argv[7])
+    {
+        printf("The value of the Inputdirectory or Outputdirectory is missing");
+        return 0;
+    }
+
+    if (!isValidParameters(argv))
+    {
+        printf("./apply-effect \"./in/\" \"./out/\" 3 boxblur");
+        return 0;
+    }
+
+    // Creations of threads
+    pthread_create(&threadCleanDirectory, NULL, clean_directory,  (void*) argv[7]);
+    pthread_create(&threadTreatment, NULL, do_treatment, (void*) argv);
+
+    pthread_join(threadCleanDirectory, NULL);
+    pthread_join(threadTreatment, NULL);
+    return 0;
+}
+
+void *do_treatment(void* argument) {
+    char *const *argv = (char *const *) argument;
+
+    struct dirent *deInput = NULL;  // Pointer for directory entry
+
+    // opendir() returns a pointer of DIR type.
+    DIR *dr = opendir(argv[6]);
+    if (NULL == dr)  // opendir returns NULL if couldn't open directory
+    {
+        printf("Could not open current directory");
+        return NULL;
+    }
+
+    while ((deInput = readdir(dr)) != NULL)
+    {
+        if ((0 == strcmp(get_filename_ext(deInput->d_name), "bmp"))
+            || (0 == strcmp(get_filename_ext(deInput->d_name), "BMP")))
+        {
+            char *fileInput = get_file_input(argv, deInput);
+            printf("File open : %s", fileInput);
+            Image img = open_bitmap(fileInput);
+            Image new_i;
+            apply_effect(&img, &new_i);
+            char *fileOutPut = get_file_output(argv, deInput->d_name);
+            save_bitmap(new_i, fileOutPut);
+            fileInput = NULL;
+            fileOutPut = NULL;
+        }
+    }
+    closedir(dr);
+}
+
+int isValidParameters(char *const *argv) {
+    int valid = 0;
+
+    if ((argv[8]) && 0 == strcmp("-boxblur", argv[8])) {
+        valid = 1;
+    } else {
+        valid = 0;
+    }
+
+    if ((argv[9]) && 0 == strcmp("-edgedetect", argv[9])) {
+        valid = 1;
+    } else {
+        valid = 0;
+    }
+
+    if ((argv[10]) && 0 == strcmp("-sharpen", argv[10])) {
+        valid = 1;
+    } else {
+        valid = 0;
+    }
+    return valid;
+}
+
+
+
+char *get_file_input(char *const *argv, const struct dirent *deInput) {
+    const unsigned long inputDirectoryLength = strlen(argv[6]) + strlen(deInput->d_name);
+    char *fileInput = malloc(sizeof(char) * (inputDirectoryLength));
+
+    if (NULL == fileInput)
+    {
+        fprintf(stderr, "Unable to allocate");
+    }
+
+    fileInput = strcat(fileInput, argv[6]);
+    fileInput = strcat(fileInput, deInput->d_name);
+    return fileInput;
+}
+
+char *get_file_output(char *const *argv, char *ch) {
+    const unsigned long outPutDirectoryLength = strlen(argv[7]) + strlen(ch);
+    char *fileOutPut = malloc(sizeof(char) * (outPutDirectoryLength));
+
+    if (NULL == fileOutPut)
+    {
+        fprintf(stderr, "Unable to allocate");
+    }
+
+    fileOutPut = strcat(fileOutPut, argv[7]);
+    fileOutPut = strcat(fileOutPut, ch);
+    return fileOutPut;
+}
+
+void *clean_directory(void* argument) {
+    char* outPutDirectory = (char*) argument;
+    DIR *dr = opendir(outPutDirectory);
+
+    struct dirent *deOutPut;
+
+    while (NULL != (deOutPut = readdir(dr)))
+    {
+        unsigned long outPutDirectoryLength = strlen(outPutDirectory) + strlen(deOutPut->d_name);
+        char *fileOutPut = malloc(sizeof(char) * (outPutDirectoryLength));
+
+        if (NULL == fileOutPut)
+        {
+            fprintf(stderr, "Unable to allocate");
+        }
+
+        fileOutPut = strcat(fileOutPut, outPutDirectory);
+        fileOutPut = strcat(fileOutPut, deOutPut->d_name);
+        // Delete file
+        remove(fileOutPut);
+    }
+    closedir(dr);
+}
+
+const char *get_filename_ext(const char *filename) {
+    const char *dot = strrchr(filename, '.');
+    if (!dot || dot == filename) return "";
+    return dot + 1;
+}
+
+
+void apply_effect(Image *original, Image *new_i) {
 
     int w = original->bmp_header.width;
     int h = original->bmp_header.height;
@@ -35,14 +193,14 @@ void apply_effect(Image* original, Image* new_i) {
 
     for (int y = OFFSET; y < h - OFFSET; y++) {
         for (int x = OFFSET; x < w - OFFSET; x++) {
-            Color_e c = { .Red = 0, .Green = 0, .Blue = 0};
+            Color_e c = {.Red = 0, .Green = 0, .Blue = 0};
 
-            for(int a = 0; a < LENGHT; a++){
-                for(int b = 0; b < LENGHT; b++){
+            for (int a = 0; a < LENGHT; a++) {
+                for (int b = 0; b < LENGHT; b++) {
                     int xn = x + a - OFFSET;
                     int yn = y + b - OFFSET;
 
-                    Pixel* p = &original->pixel_data[yn][xn];
+                    Pixel *p = &original->pixel_data[yn][xn];
 
                     c.Red += ((float) p->r) * KERNEL[a][b];
                     c.Green += ((float) p->g) * KERNEL[a][b];
@@ -50,22 +208,10 @@ void apply_effect(Image* original, Image* new_i) {
                 }
             }
 
-            Pixel* dest = &new_i->pixel_data[y][x];
-            dest->r = (uint8_t)  (c.Red <= 0 ? 0 : c.Red >= 255 ? 255 : c.Red);
-            dest->g = (uint8_t) (c.Green <= 0 ? 0 : c.Green >= 255 ? 255 : c.Green);
-            dest->b = (uint8_t) (c.Blue <= 0 ? 0 : c.Blue >= 255 ? 255 : c.Blue);
+            Pixel *dest = &new_i->pixel_data[y][x];
+            dest->r = (uint8_t)(c.Red <= 0 ? 0 : c.Red >= 255 ? 255 : c.Red);
+            dest->g = (uint8_t)(c.Green <= 0 ? 0 : c.Green >= 255 ? 255 : c.Green);
+            dest->b = (uint8_t)(c.Blue <= 0 ? 0 : c.Blue >= 255 ? 255 : c.Blue);
         }
     }
-}
-
-int main(int argc, char **argv) {
-    char *const filenameInput = strcat(argv[6], "bmp_tank.bmp");
-    printf("Image read filename: %s\n", filenameInput);
-    Image img = open_bitmap(filenameInput);
-    Image new_i;
-    apply_effect(&img, &new_i);
-    char *const fileNameOutPut = strcat(argv[6], "test_out.bmp");
-    printf("Image save filename: %s\n", fileNameOutPut);
-    save_bitmap(new_i, fileNameOutPut);
-    return 0;
 }
