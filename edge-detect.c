@@ -94,7 +94,7 @@ void *do_treatment(void* argument) {
             || (0 == strcmp(get_filename_ext(deInput->d_name), "BMP")))
         {
             char *fileInput = get_file_input(argv, deInput);
-            printf("File open : %s", fileInput);
+            printf("File open : %s \n", fileInput);
             Image img = open_bitmap(fileInput);
             Image new_i;
             apply_effect(&img, &new_i);
