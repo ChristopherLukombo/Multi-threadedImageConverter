@@ -42,6 +42,8 @@ const char *get_filename_ext(const char *filename);
 
 int isValidParameters(char *const *argv);
 
+int countEntriesInDir(const char* dirname);
+
 
 int main(int argc, char **argv) {
     pthread_t threadCleanDirectory;
@@ -79,6 +81,11 @@ void *do_treatment(void* argument) {
     {
         printf("Could not open current directory");
         return NULL;
+    }
+
+    if (0 == countEntriesInDir(argv[6])) {
+        printf("Directory is empty");
+        return 0;
     }
 
     while ((deInput = readdir(dr)) != NULL)
@@ -183,6 +190,20 @@ const char *get_filename_ext(const char *filename) {
     return dot + 1;
 }
 
+int countEntriesInDir(const char* dirname)
+{
+    int n=0;
+    struct dirent *d = NULL;
+    DIR* dir = opendir(dirname);
+    if (dir == NULL) return 0;
+    while((d = readdir(dir))!=NULL) {
+        if ((0 != strcmp(d->d_name, ".")) && (0 != strcmp(d->d_name, ".."))) {
+            n++;
+        }
+    }
+    closedir(dir);
+    return n;
+}
 
 void apply_effect(Image *original, Image *new_i) {
 
